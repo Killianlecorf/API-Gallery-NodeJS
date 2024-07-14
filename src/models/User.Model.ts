@@ -1,10 +1,10 @@
 import mongoose, { Document, Schema, Model, model } from 'mongoose';
-import { IPicture } from './Picture.Model';
+import { IImage } from './Picture.Model';
 
 export interface IUser extends Document {
     name: string;
     password: string;
-    pictures: IPicture[];
+    pictures: IImage[];
 }
 
 const userSchema = new Schema<IUser>(
@@ -20,7 +20,7 @@ const userSchema = new Schema<IUser>(
             select: false
         },
         pictures: [
-            { type: Schema.Types.ObjectId, ref: "Picture",required: true},
+            { type: Schema.Types.ObjectId, ref: "Picture", required: true },
         ],
     },
     { timestamps: true }

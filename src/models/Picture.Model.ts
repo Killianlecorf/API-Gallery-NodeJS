@@ -1,26 +1,17 @@
-import mongoose, { Document, Schema, Model } from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 
-export interface IPicture extends Document {
-    filename: string;
-    originalName: string;
-    mimetype: string;
-    size: number;
-    user: Schema.Types.ObjectId | string;
-    createdAt: Date;
-    updatedAt: Date;
+export interface IImage extends Document {
+  url: string;
+  user: mongoose.Schema.Types.ObjectId;
+  public: boolean;
+  uploadedAt: Date;
 }
 
-const pictureSchema = new Schema<IPicture>(
-    {
-        filename: { type: String, required: true },
-        originalName: { type: String, required: true },
-        mimetype: { type: String, required: true },
-        size: { type: Number, required: true },
-        user: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    },
-    { timestamps: true }
-);
+const ImageSchema: Schema<IImage> = new Schema({
+  url: { type: String, required: true, unique: true },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  public: { type: Boolean, default: true },
+  uploadedAt: { type: Date, default: Date.now }
+});
 
-const Picture: Model<IPicture> = mongoose.model<IPicture>('Picture', pictureSchema);
-
-export default Picture;
+export default mongoose.model<IImage>('Image', ImageSchema);

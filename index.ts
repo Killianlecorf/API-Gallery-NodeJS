@@ -3,7 +3,7 @@ import express from 'express';
 import connectDatabaseMongo from './src/config/connectDatabase';
 import bodyParser from 'body-parser';
 import cors from "cors";
-import UserRoute  from './src/routes/User.Route';
+import UserRoute  from './src/routes/User.Routes';
 import cookieParser from 'cookie-parser';
 
 const app = express();
