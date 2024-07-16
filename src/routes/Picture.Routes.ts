@@ -1,19 +1,20 @@
 import { Router } from 'express';
-import {
-  uploadImage,
-  listImages,
-  toggleAccessibility,
+import { 
+  uploadImageMiddleware, 
+  uploadImage, 
+  getUserImages, 
   deleteImage,
-  generateUrl
+  getAllImages
 } from '../controllers/Picture.Controller';
-import {authenticateUser} from '../middlewares/auth.middleware';
+import { authenticateUser } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-router.post('/upload', authenticateUser, uploadImage);
-router.get('/', authenticateUser, listImages);
-router.put('/:id', authenticateUser, toggleAccessibility);
-router.delete('/:id', authenticateUser, deleteImage);
-router.post('/:id/generate-url', authenticateUser, generateUrl);
+router.post('/upload',authenticateUser, uploadImageMiddleware, uploadImage);
+
+router.get('/:id', authenticateUser, getUserImages);
+router.get('/', authenticateUser, getAllImages);
+
+router.delete('/:id', authenticateUser,  deleteImage);
 
 export default router;
