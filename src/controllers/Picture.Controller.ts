@@ -84,17 +84,25 @@ export const deleteImage = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Image not found' });
     }
 
-    // Supprimer le fichier physique
-    // const imagePath = path.join(__dirname, '../uploads', path.basename(image.url));
-    // fs.unlink(imagePath, (err) => {
-    //   if (err) {
-    //     console.error('Error deleting file:', err);
-    //   }
-    // });
-
     await User.updateOne({ _id: image.user }, { $pull: { pictures: image._id } });
 
-    res.status(200).json({ message: 'Image deleted successfully' });
+    const imagePath = path.resolve(__dirname, '../../../uploads', path.basename(image.url));
+    console.log('Attempting to delete file at path:', imagePath);
+
+    if (fs.existsSync(imagePath)) {
+      fs.unlink(imagePath, (err) => {
+        if (err) {
+          console.error('Error deleting file:', err);
+        } else {
+          console.log('File deleted successfully:', imagePath);
+        }
+      });
+    } else {
+      console.log('File not found:', imagePath);
+    }
+
+    return res.status(200).json({ message: 'Image deleted successfully' });
+
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
