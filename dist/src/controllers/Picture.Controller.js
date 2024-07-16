@@ -16,6 +16,8 @@ exports.deleteImage = exports.getUserImages = exports.getAllImages = exports.upl
 const multer_1 = __importDefault(require("multer"));
 const Picture_Model_1 = __importDefault(require("../models/Picture.Model"));
 const User_Model_1 = require("../models/User.Model");
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
 // Configuration de multer pour l'upload d'image
 const storage = multer_1.default.diskStorage({
     destination: (req, file, cb) => {
@@ -93,15 +95,23 @@ const deleteImage = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         if (!image) {
             return res.status(404).json({ message: 'Image not found' });
         }
-        // Supprimer le fichier physique
-        // const imagePath = path.join(__dirname, '../uploads', path.basename(image.url));
-        // fs.unlink(imagePath, (err) => {
-        //   if (err) {
-        //     console.error('Error deleting file:', err);
-        //   }
-        // });
         yield User_Model_1.User.updateOne({ _id: image.user }, { $pull: { pictures: image._id } });
-        res.status(200).json({ message: 'Image deleted successfully' });
+        const imagePath = path_1.default.resolve(__dirname, '../../../uploads', path_1.default.basename(image.url));
+        console.log('Attempting to delete file at path:', imagePath);
+        if (fs_1.default.existsSync(imagePath)) {
+            fs_1.default.unlink(imagePath, (err) => {
+                if (err) {
+                    console.error('Error deleting file:', err);
+                }
+                else {
+                    console.log('File deleted successfully:', imagePath);
+                }
+            });
+        }
+        else {
+            console.log('File not found:', imagePath);
+        }
+        return res.status(200).json({ message: 'Image deleted successfully' });
     }
     catch (err) {
         res.status(500).json({ error: err.message });
