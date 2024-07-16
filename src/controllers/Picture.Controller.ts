@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
 import multer, { Multer } from 'multer';
+import { Types } from 'mongoose';
 import Image, { IImage } from '../models/Picture.Model';
 import { User, IUser } from '../models/User.Model';
 import fs from 'fs';
 import path from 'path';
 
-// Configuration de multer pour l'upload d'image
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');
@@ -16,11 +16,10 @@ const storage = multer.diskStorage({
 });
 
 const upload: Multer = multer({ storage });
-
 export const uploadImageMiddleware = upload.single('image');
 
 export const uploadImage = async (req: Request, res: Response) => {
-  const { id } = req.body;
+  const { id } = req.params;
   const file: Express.Multer.File | undefined = req.file;
   try {
     const user = await User.findById(id).exec();
@@ -30,14 +29,15 @@ export const uploadImage = async (req: Request, res: Response) => {
     if (!file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
-    const image = new Image({
-      url: `/uploads/${file.filename}`,
-      user: id
-    } as IImage);
-    await image.save();
-    user.pictures.push(image._id as any);
+    const image: Partial<IImage> = {
+      url: `uploads/${file.filename}`,
+      user: new Types.ObjectId(id)
+    };
+    const newImage = new Image(image);
+    await newImage.save();
+    user.pictures.push(newImage._id as any);
     await user.save();
-    res.status(201).json({ message: 'Image uploaded successfully', url: image.url });
+    res.status(201).json({ message: 'Image uploaded successfully', url: newImage.url });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -52,7 +52,6 @@ export const getAllImages = async (req: Request, res: Response) => {
   }
 };
 
-// Lister les images d'un utilisateur, triées par date et séparées par mois
 export const getUserImages = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
