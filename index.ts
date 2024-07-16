@@ -4,6 +4,7 @@ import connectDatabaseMongo from './src/config/connectDatabase';
 import bodyParser from 'body-parser';
 import cors from "cors";
 import UserRoute  from './src/routes/User.Routes';
+import PictureRoute  from './src/routes/Picture.Routes';
 import cookieParser from 'cookie-parser';
 
 const app = express();
@@ -25,6 +26,7 @@ app.use(cookieParser());
 connectDatabaseMongo()
 
 app.use('/api/user', UserRoute);
+app.use('/api/pictures', PictureRoute);
 
 app.listen(port, () => {
   console.log(`Serveur démarré sur le port ${port}`);

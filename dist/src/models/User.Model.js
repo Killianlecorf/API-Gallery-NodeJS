@@ -11,10 +11,10 @@ const userSchema = new mongoose_1.Schema({
     password: {
         type: String,
         required: true,
-        select: false
+        select: false,
     },
     pictures: [
-        { type: mongoose_1.Schema.Types.ObjectId, ref: "Picture", required: true },
+        { type: mongoose_1.Schema.Types.ObjectId, ref: 'Image', required: true },
     ],
 }, { timestamps: true });
 exports.User = (0, mongoose_1.model)('User', userSchema);

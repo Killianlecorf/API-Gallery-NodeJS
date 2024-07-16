@@ -1,80 +1,101 @@
 import { Request, Response } from 'express';
-import multer from 'multer';
-import { v4 as uuidv4 } from 'uuid';
+import multer, { Multer } from 'multer';
 import Image, { IImage } from '../models/Picture.Model';
-import { AuthRequest } from '../middlewares/auth.middleware';
+import { User, IUser } from '../models/User.Model';
+import fs from 'fs';
+import path from 'path';
 
+// Configuration de multer pour l'upload d'image
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
-  filename: (req, file, cb) => cb(null, uuidv4() + '-' + file.originalname)
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname);
+  }
 });
 
-const upload = multer({ storage }).single('image');
+const upload: Multer = multer({ storage });
 
-export const uploadImage = (req: AuthRequest, res: Response) => {
-  upload(req, res, async (err) => {
-    if (err) {
-      return res.status(500).json({ msg: 'Error uploading file' });
-    }
-    try {
-      const newImage = new Image({
-        url: req.file.path,
-        user: req.user.id
-      });
-      await newImage.save();
-      res.json({ url: newImage.url });
-    } catch (err) {
-      res.status(500).send('Server error');
-    }
-  });
-};
+export const uploadImageMiddleware = upload.single('image');
 
-export const listImages = async (req: AuthRequest, res: Response) => {
+export const uploadImage = async (req: Request, res: Response) => {
+  const { id } = req.body;
+  const file: Express.Multer.File | undefined = req.file;
   try {
-    const images = await Image.find({ user: req.user.id }).sort({ uploadedAt: -1 });
-    res.json(images);
-  } catch (err) {
-    res.status(500).send('Server error');
-  }
-};
-
-export const toggleAccessibility = async (req: AuthRequest, res: Response) => {
-  try {
-    const image = await Image.findById(req.params.id);
-    if (!image || image.user.toString() !== req.user.id) {
-      return res.status(401).json({ msg: 'Not authorized' });
+    const user = await User.findById(id).exec();
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
-    image.public = !image.public;
+    if (!file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+    const image = new Image({
+      url: `/uploads/${file.filename}`,
+      user: id
+    } as IImage);
     await image.save();
-    res.json(image);
-  } catch (err) {
-    res.status(500).send('Server error');
+    user.pictures.push(image._id as any);
+    await user.save();
+    res.status(201).json({ message: 'Image uploaded successfully', url: image.url });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 };
 
-export const deleteImage = async (req: AuthRequest, res: Response) => {
+export const getAllImages = async (req: Request, res: Response) => {
   try {
-    const image = await Image.findById(req.params.id);
-    if (!image || image.user.toString() !== req.user.id) {
-      return res.status(401).json({ msg: 'Not authorized' });
-    }
-    await image.remove();
-    res.json({ msg: 'Image deleted' });
-  } catch (err) {
-    res.status(500).send('Server error');
+    const images = await Image.find().exec();
+    res.status(200).json(images);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 };
 
-export const generateUrl = async (req: AuthRequest, res: Response) => {
+// Lister les images d'un utilisateur, triées par date et séparées par mois
+export const getUserImages = async (req: Request, res: Response) => {
+  const { id } = req.params;
   try {
-    const image = await Image.findById(req.params.id);
-    if (!image || image.user.toString() !== req.user.id) {
-      return res.status(401).json({ msg: 'Not authorized' });
+    const user = await User.findById(id).populate('pictures').exec();
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
-    image.url = `${image.url}-${uuidv4()}`;
-    await image.save();
-    res.json({ url: image.url });
-  } catch (err) {
-    res.status(500).send('Server error');
+    const images = user.pictures as IImage[];
+    const groupedImages = images.reduce((acc, image) => {
+      const monthYear = image.uploadDate.toISOString().substring(0, 7);
+      if (!acc[monthYear]) {
+        acc[monthYear] = [];
+      }
+      acc[monthYear].push(image);
+      return acc;
+    }, {} as { [key: string]: IImage[] });
+    res.status(200).json(groupedImages);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+export const deleteImage = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const image = await Image.findByIdAndDelete(id);
+    if (!image) {
+      return res.status(404).json({ message: 'Image not found' });
+    }
+
+    // Supprimer le fichier physique
+    // const imagePath = path.join(__dirname, '../uploads', path.basename(image.url));
+    // fs.unlink(imagePath, (err) => {
+    //   if (err) {
+    //     console.error('Error deleting file:', err);
+    //   }
+    // });
+
+    await User.updateOne({ _id: image.user }, { $pull: { pictures: image._id } });
+
+    res.status(200).json({ message: 'Image deleted successfully' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 };

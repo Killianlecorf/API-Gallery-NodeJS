@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteUser = exports.getUserLogin = exports.createUser = exports.getUserById = exports.getAllUsers = void 0;
 const User_Model_1 = require("../models/User.Model");
+const Picture_Model_1 = __importDefault(require("../models/Picture.Model"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const dotenv_1 = __importDefault(require("dotenv"));
@@ -69,7 +70,7 @@ const createUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         res.json({ user, token });
     }
     catch (error) {
-        console.log(error);
+        console.error('Error creating user:', error);
         res.status(500).json({ error: 'Une erreur est survenue lors de la création de l\'utilisateur.' });
     }
 });
@@ -101,16 +102,14 @@ const getUserLogin = (req, res) => __awaiter(void 0, void 0, void 0, function* (
 exports.getUserLogin = getUserLogin;
 // DELETE /users/:id
 const deleteUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const userId = req.params.id;
+    const { id } = req.params;
     try {
-        const user = yield User_Model_1.User.findByIdAndDelete(userId);
-        if (!user) {
-            return res.status(404).json({ error: 'Utilisateur non trouvé.' });
-        }
-        res.json({ message: 'Utilisateur supprimé avec succès.' });
+        yield User_Model_1.User.findByIdAndDelete(id);
+        yield Picture_Model_1.default.deleteMany({ user: id });
+        res.status(200).json({ message: 'User and images deleted successfully' });
     }
-    catch (error) {
-        res.status(500).json({ error: 'Une erreur est survenue lors de la suppression de l\'utilisateur.' });
+    catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 exports.deleteUser = deleteUser;
