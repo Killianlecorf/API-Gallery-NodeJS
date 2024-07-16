@@ -14,11 +14,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteImage = exports.getUserImages = exports.getAllImages = exports.uploadImage = exports.uploadImageMiddleware = void 0;
 const multer_1 = __importDefault(require("multer"));
+const mongoose_1 = require("mongoose");
 const Picture_Model_1 = __importDefault(require("../models/Picture.Model"));
 const User_Model_1 = require("../models/User.Model");
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
-// Configuration de multer pour l'upload d'image
 const storage = multer_1.default.diskStorage({
     destination: (req, file, cb) => {
         cb(null, 'uploads/');
@@ -30,7 +30,7 @@ const storage = multer_1.default.diskStorage({
 const upload = (0, multer_1.default)({ storage });
 exports.uploadImageMiddleware = upload.single('image');
 const uploadImage = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id } = req.body;
+    const { id } = req.params;
     const file = req.file;
     try {
         const user = yield User_Model_1.User.findById(id).exec();
@@ -40,14 +40,15 @@ const uploadImage = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         if (!file) {
             return res.status(400).json({ message: 'No file uploaded' });
         }
-        const image = new Picture_Model_1.default({
-            url: `/uploads/${file.filename}`,
-            user: id
-        });
-        yield image.save();
-        user.pictures.push(image._id);
+        const image = {
+            url: `uploads/${file.filename}`,
+            user: new mongoose_1.Types.ObjectId(id)
+        };
+        const newImage = new Picture_Model_1.default(image);
+        yield newImage.save();
+        user.pictures.push(newImage._id);
         yield user.save();
-        res.status(201).json({ message: 'Image uploaded successfully', url: image.url });
+        res.status(201).json({ message: 'Image uploaded successfully', url: newImage.url });
     }
     catch (err) {
         res.status(500).json({ error: err.message });
@@ -64,7 +65,6 @@ const getAllImages = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     }
 });
 exports.getAllImages = getAllImages;
-// Lister les images d'un utilisateur, triées par date et séparées par mois
 const getUserImages = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
     try {

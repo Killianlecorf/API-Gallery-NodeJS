@@ -10,7 +10,7 @@ import { authenticateUser } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-router.post('/upload',authenticateUser, uploadImageMiddleware, uploadImage);
+router.post('/upload/:id', authenticateUser,  uploadImageMiddleware, uploadImage);
 
 router.get('/:id', authenticateUser, getUserImages);
 router.get('/', getAllImages);
