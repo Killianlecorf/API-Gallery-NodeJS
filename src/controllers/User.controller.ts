@@ -112,3 +112,28 @@ export const createUser = async (req: Request, res: Response) => {
       res.status(500).json({ error: err.message });
     }
   };
+
+  export function isAuthenticated(req: Request, res: Response) {
+    try {
+      const token = req.cookies.token;
+      
+      if (token) {
+        return res.status(200).json({ isAuthenticated: true });
+      } else {
+        return res.status(401).json({ isAuthenticated: false, message: 'Non connecté, token non trouvé.' });
+      }
+    } catch (error) {
+      console.error('Erreur de vérification:', error);
+      return res.status(500).json({ message: 'Une erreur est survenue lors de la vérification de l\'authentification.' });
+    }
+  }
+
+  export function logOut(req: Request, res: Response) {
+    try {
+      res.clearCookie('token');
+      return res.status(200).json({ message: 'Déconnexion réussie.' });
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+      return res.status(500).json({ message: 'Une erreur est survenue lors de la déconnexion.' });
+    }
+  };

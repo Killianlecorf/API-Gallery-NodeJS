@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteUser = exports.getUserLogin = exports.createUser = exports.getUserById = exports.getAllUsers = void 0;
+exports.logOut = exports.isAuthenticated = exports.deleteUser = exports.getUserLogin = exports.createUser = exports.getUserById = exports.getAllUsers = void 0;
 const User_Model_1 = require("../models/User.Model");
 const Picture_Model_1 = __importDefault(require("../models/Picture.Model"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
@@ -113,3 +113,31 @@ const deleteUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     }
 });
 exports.deleteUser = deleteUser;
+function isAuthenticated(req, res) {
+    try {
+        const token = req.cookies.token;
+        if (token) {
+            return res.status(200).json({ isAuthenticated: true });
+        }
+        else {
+            return res.status(401).json({ isAuthenticated: false, message: 'Non connecté, token non trouvé.' });
+        }
+    }
+    catch (error) {
+        console.error('Erreur de vérification:', error);
+        return res.status(500).json({ message: 'Une erreur est survenue lors de la vérification de l\'authentification.' });
+    }
+}
+exports.isAuthenticated = isAuthenticated;
+function logOut(req, res) {
+    try {
+        res.clearCookie('token');
+        return res.status(200).json({ message: 'Déconnexion réussie.' });
+    }
+    catch (error) {
+        console.error('Erreur lors de la déconnexion:', error);
+        return res.status(500).json({ message: 'Une erreur est survenue lors de la déconnexion.' });
+    }
+}
+exports.logOut = logOut;
+;

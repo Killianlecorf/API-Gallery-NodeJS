@@ -27,6 +27,7 @@
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
+    "@types/cookie": "^0.6.0",
     "@types/cors": "^2.8.17",
     "@types/eslint": "^8.56.10",
     "@types/estree": "^1.0.5",
