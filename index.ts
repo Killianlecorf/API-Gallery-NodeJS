@@ -6,6 +6,7 @@ import cors from "cors";
 import UserRoute  from './src/routes/User.Routes';
 import PictureRoute  from './src/routes/Picture.Routes';
 import cookieParser from 'cookie-parser';
+import path from 'path';
 
 const app = express();
 
@@ -17,6 +18,8 @@ const corsOptions = {
   origin: 'http://localhost:3000',
   credentials: true 
 };
+
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.use(bodyParser.json())
 app.use(cors(corsOptions))
