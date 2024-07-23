@@ -11,6 +11,7 @@ const cors_1 = __importDefault(require("cors"));
 const User_Routes_1 = __importDefault(require("./src/routes/User.Routes"));
 const Picture_Routes_1 = __importDefault(require("./src/routes/Picture.Routes"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
+const path_1 = __importDefault(require("path"));
 const app = (0, express_1.default)();
 dotenv_1.default.config();
 const port = process.env.PORT || 3000;
@@ -18,6 +19,7 @@ const corsOptions = {
     origin: 'http://localhost:3000',
     credentials: true
 };
+app.use('/uploads', express_1.default.static(path_1.default.join(__dirname, '../uploads')));
 app.use(body_parser_1.default.json());
 app.use((0, cors_1.default)(corsOptions));
 app.use(express_1.default.json());
