@@ -18,6 +18,8 @@ const Picture_Model_1 = __importDefault(require("../models/Picture.Model"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
 dotenv_1.default.config();
 // GET /users   
 const getAllUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -104,11 +106,47 @@ exports.getUserLogin = getUserLogin;
 const deleteUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
     try {
+        const user = yield User_Model_1.User.findById(id).populate('pictures').exec();
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
         yield User_Model_1.User.findByIdAndDelete(id);
-        yield Picture_Model_1.default.deleteMany({ user: id });
-        res.status(200).json({ message: 'User and images deleted successfully' });
+        const images = yield Picture_Model_1.default.find({ user: id });
+        const deleteFilePromises = images.map(image => {
+            const imagePath = path_1.default.join(__dirname, '../../../uploads', path_1.default.basename(image.url));
+            console.log('Constructed imagePath:', imagePath);
+            console.log('Original image URL:', image.url);
+            return new Promise((resolve, reject) => {
+                if (fs_1.default.existsSync(imagePath)) {
+                    fs_1.default.unlink(imagePath, (err) => {
+                        if (err) {
+                            console.error('Error deleting file:', err);
+                            reject(err);
+                        }
+                        else {
+                            console.log('File deleted successfully:', imagePath);
+                            resolve();
+                        }
+                    });
+                }
+                else {
+                    console.log('File not found:', imagePath);
+                    resolve();
+                }
+            });
+        });
+        try {
+            yield Promise.all(deleteFilePromises);
+            yield Picture_Model_1.default.deleteMany({ user: id });
+            res.status(200).json({ message: 'User and images deleted successfully' });
+        }
+        catch (err) {
+            console.error('Error in deleting files:', err);
+            res.status(500).json({ error: 'Error deleting files' });
+        }
     }
     catch (err) {
+        console.error('Error in deleteUser:', err);
         res.status(500).json({ error: err.message });
     }
 });

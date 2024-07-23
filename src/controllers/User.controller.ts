@@ -4,6 +4,8 @@ import Image, { IImage } from '../models/Picture.Model';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
 
 dotenv.config();
 
@@ -105,10 +107,48 @@ export const createUser = async (req: Request, res: Response) => {
   export const deleteUser = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
+      const user = await User.findById(id).populate('pictures').exec();
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+  
       await User.findByIdAndDelete(id);
-      await Image.deleteMany({ user: id });
-      res.status(200).json({ message: 'User and images deleted successfully' });
+      const images = await Image.find({ user: id });
+  
+      const deleteFilePromises = images.map(image => {
+        const imagePath = path.join(__dirname, '../../../uploads', path.basename(image.url));
+        console.log('Constructed imagePath:', imagePath);
+        console.log('Original image URL:', image.url);
+  
+        return new Promise<void>((resolve, reject) => {
+          if (fs.existsSync(imagePath)) {
+            fs.unlink(imagePath, (err) => {
+              if (err) {
+                console.error('Error deleting file:', err);
+                reject(err);
+              } else {
+                console.log('File deleted successfully:', imagePath);
+                resolve();
+              }
+            });
+          } else {
+            console.log('File not found:', imagePath);
+            resolve();
+          }
+        });
+      });
+  
+      try {
+        await Promise.all(deleteFilePromises);
+        await Image.deleteMany({ user: id });
+        res.status(200).json({ message: 'User and images deleted successfully' });
+      } catch (err) {
+        console.error('Error in deleting files:', err);
+        res.status(500).json({ error: 'Error deleting files' });
+      }
+  
     } catch (err: any) {
+      console.error('Error in deleteUser:', err);
       res.status(500).json({ error: err.message });
     }
   };
