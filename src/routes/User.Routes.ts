@@ -13,7 +13,7 @@ import {
 const router = express.Router();
 
 router.get('/users', getAllUsers);
-router.get('/user/:id', getUserById);
+router.get('/user', getUserById);
 router.get('/isAuth', isAuthenticated);
 
 // Authentification
