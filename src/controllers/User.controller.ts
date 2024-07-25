@@ -19,18 +19,33 @@ export const getAllUsers = async (req: Request, res: Response) => {
   }
 };
 
-// GET /users/:id
+// GET /user/
 export const getUserById = async (req: Request, res: Response) => {
-  const userId = req.params.id;
-  try {
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ error: 'Utilisateur non trouvé.' });
+  const token = req.cookies.token;
+
+    if (!token) {
+        return res.status(401).json({ message: 'Token missing or invalid' });
     }
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ error: 'Une erreur est survenue lors de la récupération de l\'utilisateur.' });
-  }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET) as { userId: string };
+
+        const user = await User.findById(decoded.userId).populate('pictures');
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json({
+            id: user._id,
+            name: user.name,
+            pictures: user.pictures, 
+        });
+
+    } catch (error) {
+        console.error('Token verification failed:', error);
+        res.status(401).json({ message: 'Invalid token' });
+    }
 };
 
 
