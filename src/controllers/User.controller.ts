@@ -132,8 +132,6 @@ export const createUser = async (req: Request, res: Response) => {
   
       const deleteFilePromises = images.map(image => {
         const imagePath = path.join(__dirname, '../../../uploads', path.basename(image.url));
-        console.log('Constructed imagePath:', imagePath);
-        console.log('Original image URL:', image.url);
   
         return new Promise<void>((resolve, reject) => {
           if (fs.existsSync(imagePath)) {
@@ -156,6 +154,7 @@ export const createUser = async (req: Request, res: Response) => {
       try {
         await Promise.all(deleteFilePromises);
         await Image.deleteMany({ user: id });
+        res.cookie('token', '', { expires: new Date(0), httpOnly: true, secure: process.env.NODE_ENV === 'production' });
         res.status(200).json({ message: 'User and images deleted successfully' });
       } catch (err) {
         console.error('Error in deleting files:', err);
