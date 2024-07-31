@@ -43,10 +43,32 @@ export const uploadImage = async (req: Request, res: Response) => {
   }
 };
 
+// export const getAllImages = async (req: Request, res: Response) => {
+//   try {
+//     const images = await Image.find().exec();
+//     res.status(200).json(images);
+//   } catch (err: any) {
+//     res.status(500).json({ error: err.message });
+//   }
+// };
+
 export const getAllImages = async (req: Request, res: Response) => {
   try {
-    const images = await Image.find().exec();
-    res.status(200).json(images);
+    const images: IImage[] = await Image.find().sort({ uploadDate: 1 }).exec();
+
+    const groupedImages = images.reduce((acc: { [key: string]: IImage[] }, image: IImage) => {
+      const monthKey = `${image.uploadDate.getFullYear()}-${String(image.uploadDate.getMonth() + 1).padStart(2, '0')}`;
+
+      if (!acc[monthKey]) {
+        acc[monthKey] = [];
+      }
+
+      acc[monthKey].push(image);
+
+      return acc;
+    }, {});
+
+    res.status(200).json(groupedImages);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
