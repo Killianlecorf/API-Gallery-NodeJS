@@ -55,10 +55,26 @@ const uploadImage = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.uploadImage = uploadImage;
+// export const getAllImages = async (req: Request, res: Response) => {
+//   try {
+//     const images = await Image.find().exec();
+//     res.status(200).json(images);
+//   } catch (err: any) {
+//     res.status(500).json({ error: err.message });
+//   }
+// };
 const getAllImages = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const images = yield Picture_Model_1.default.find().exec();
-        res.status(200).json(images);
+        const images = yield Picture_Model_1.default.find().sort({ uploadDate: 1 }).exec();
+        const groupedImages = images.reduce((acc, image) => {
+            const monthKey = `${image.uploadDate.getFullYear()}-${String(image.uploadDate.getMonth() + 1).padStart(2, '0')}`;
+            if (!acc[monthKey]) {
+                acc[monthKey] = [];
+            }
+            acc[monthKey].push(image);
+            return acc;
+        }, {});
+        res.status(200).json(groupedImages);
     }
     catch (err) {
         res.status(500).json({ error: err.message });
