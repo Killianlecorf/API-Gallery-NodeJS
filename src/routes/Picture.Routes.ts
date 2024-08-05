@@ -4,7 +4,8 @@ import {
   uploadImage, 
   getUserImages, 
   deleteImage,
-  getAllImages
+  getPublicImages,
+  toggleImageVisibility
 } from '../controllers/Picture.Controller';
 import { authenticateUser } from '../middlewares/auth.middleware';
 
@@ -13,7 +14,10 @@ const router = Router();
 router.post('/upload/:id', authenticateUser,  uploadImageMiddleware, uploadImage);
 
 router.get('/:id', authenticateUser, getUserImages);
-router.get('/', getAllImages);
+router.get('/', getPublicImages);
+
+router.put('/visibility/:imageId', toggleImageVisibility);
+
 
 router.delete('/:id', authenticateUser,  deleteImage);
 

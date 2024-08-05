@@ -6,6 +6,7 @@ const auth_middleware_1 = require("../middlewares/auth.middleware");
 const router = (0, express_1.Router)();
 router.post('/upload/:id', auth_middleware_1.authenticateUser, Picture_Controller_1.uploadImageMiddleware, Picture_Controller_1.uploadImage);
 router.get('/:id', auth_middleware_1.authenticateUser, Picture_Controller_1.getUserImages);
-router.get('/', Picture_Controller_1.getAllImages);
+router.get('/', Picture_Controller_1.getPublicImages);
+router.put('/visibility/:imageId', Picture_Controller_1.toggleImageVisibility);
 router.delete('/:id', auth_middleware_1.authenticateUser, Picture_Controller_1.deleteImage);
 exports.default = router;
