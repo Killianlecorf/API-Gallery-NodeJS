@@ -43,18 +43,9 @@ export const uploadImage = async (req: Request, res: Response) => {
   }
 };
 
-// export const getAllImages = async (req: Request, res: Response) => {
-//   try {
-//     const images = await Image.find().exec();
-//     res.status(200).json(images);
-//   } catch (err: any) {
-//     res.status(500).json({ error: err.message });
-//   }
-// };
-
-export const getAllImages = async (req: Request, res: Response) => {
+export const getPublicImages = async (req: Request, res: Response) => {
   try {
-    const images: IImage[] = await Image.find().sort({ uploadDate: 1 }).exec();
+    const images: IImage[] = await Image.find({ public: true }).sort({ uploadDate: 1 }).exec();
 
     const groupedImages = images.reduce((acc: { [key: string]: IImage[] }, image: IImage) => {
       const monthKey = `${image.uploadDate.getFullYear()}-${String(image.uploadDate.getMonth() + 1).padStart(2, '0')}`;
@@ -69,6 +60,29 @@ export const getAllImages = async (req: Request, res: Response) => {
     }, {});
 
     res.status(200).json(groupedImages);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const toggleImageVisibility = async (req: Request, res: Response) => {
+  try {
+    const { imageId } = req.params;
+
+    const image: IImage | null = await Image.findById(imageId);
+
+    if (!image) {
+      return res.status(404).json({ error: 'Image not found' });
+    }
+
+    image.public = !image.public;
+
+    await image.save();
+
+    res.status(200).json({
+      message: `Image visibility updated to ${image.public ? 'public' : 'private'}`,
+      image
+    });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

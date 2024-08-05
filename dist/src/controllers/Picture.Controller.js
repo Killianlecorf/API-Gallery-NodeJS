@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteImage = exports.getUserImages = exports.getAllImages = exports.uploadImage = exports.uploadImageMiddleware = void 0;
+exports.deleteImage = exports.getUserImages = exports.toggleImageVisibility = exports.getPublicImages = exports.uploadImage = exports.uploadImageMiddleware = void 0;
 const multer_1 = __importDefault(require("multer"));
 const mongoose_1 = require("mongoose");
 const Picture_Model_1 = __importDefault(require("../models/Picture.Model"));
@@ -55,17 +55,9 @@ const uploadImage = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.uploadImage = uploadImage;
-// export const getAllImages = async (req: Request, res: Response) => {
-//   try {
-//     const images = await Image.find().exec();
-//     res.status(200).json(images);
-//   } catch (err: any) {
-//     res.status(500).json({ error: err.message });
-//   }
-// };
-const getAllImages = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getPublicImages = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const images = yield Picture_Model_1.default.find().sort({ uploadDate: 1 }).exec();
+        const images = yield Picture_Model_1.default.find({ public: true }).sort({ uploadDate: 1 }).exec();
         const groupedImages = images.reduce((acc, image) => {
             const monthKey = `${image.uploadDate.getFullYear()}-${String(image.uploadDate.getMonth() + 1).padStart(2, '0')}`;
             if (!acc[monthKey]) {
@@ -80,7 +72,26 @@ const getAllImages = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         res.status(500).json({ error: err.message });
     }
 });
-exports.getAllImages = getAllImages;
+exports.getPublicImages = getPublicImages;
+const toggleImageVisibility = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { imageId } = req.params;
+        const image = yield Picture_Model_1.default.findById(imageId);
+        if (!image) {
+            return res.status(404).json({ error: 'Image not found' });
+        }
+        image.public = !image.public;
+        yield image.save();
+        res.status(200).json({
+            message: `Image visibility updated to ${image.public ? 'public' : 'private'}`,
+            image
+        });
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+exports.toggleImageVisibility = toggleImageVisibility;
 const getUserImages = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
     try {
